@@ -129,13 +129,30 @@ namespace Dino_Tracker
       }
 
     }
+
+    static void DisplayTopThree()
+    {
+      Console.WriteLine("Your 3 heavies dinosaurs are:");
+      DisplayListOfDinos(Dinos.OrderByDescending(dino => dino.Weight).Take(3));
+    }
+
+    static void QuitMessage()
+    {
+      Console.WriteLine("Goodbye");
+    }
+
+    static void UnknownCommand()
+    {
+      Console.WriteLine("Invalid input, try again.");
+    }
+
     static void Main(string[] args)
     {
       Console.WriteLine("Welcome to Dino Tracker!");
       var input = "";
       while (input != "quit")
       {
-        Console.WriteLine("Available commands: add, remove, view, transfer, diets, thicc, quit");
+        Console.WriteLine("Available commands: add, remove, view, transfer, diets, heavies, quit");
         input = Console.ReadLine().ToLower();
         if (input == "add")
         {
@@ -156,6 +173,18 @@ namespace Dino_Tracker
         else if (input == "diets")
         {
           DietCounter();
+        }
+        else if (input == "heavies")
+        {
+          DisplayTopThree();
+        }
+        else if (input == "quit")
+        {
+          QuitMessage();
+        }
+        else
+        {
+          UnknownCommand();
         }
 
       }
