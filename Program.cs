@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
+
 namespace Dino_Tracker
 {
   class Program
   {
-    static List<Dinosaur> Dinos = new List<Dinosaur>();
+    static DatabaseContext Db = new DatabaseContext();
 
     static void AddDino()
     {
@@ -36,14 +37,15 @@ namespace Dino_Tracker
       dino.Weight = decimal.Parse(dinoWeight);
       dino.EnclosureNumber = int.Parse(dinoEnclosure);
 
-      Dinos.Add(dino);
+      Db.Dinosaurs.Add(dino);
+      Db.SaveChanges();
 
     }
 
     static void DisplayListOfDinos(IEnumerable<Dinosaur> Dinos)
     {
       Console.WriteLine("Your dinosaurs are:");
-      foreach (var Dino in Dinos)
+      foreach (var Dino in Db.Dinosaurs)
       {
         Console.WriteLine(Dino.Name);
         var diet = "";
@@ -67,7 +69,17 @@ namespace Dino_Tracker
     {
       Console.WriteLine("What is the name of the dinosaur you would like to remove?");
       var removed = Console.ReadLine();
-      Dinos.RemoveAll(dino => dino.Name == removed);
+      var chosen = Db.Dinosaurs.FirstOrDefault(dino => dino.Name == removed);
+      if (chosen != null)
+      {
+        Db.Dinosaurs.Remove(chosen);
+        Db.SaveChanges();
+        Console.WriteLine("Removed!");
+      }
+      else
+      {
+        Console.WriteLine("Invalid Name");
+      }
 
     }
 
@@ -75,7 +87,7 @@ namespace Dino_Tracker
     {
       Console.WriteLine("What is the name of the dinosaur you would like to transfer?");
       var name = Console.ReadLine();
-      var item = Dinos.FirstOrDefault(Dino => Dino.Name == name);
+      var item = Db.Dinosaurs.FirstOrDefault(Dino => Dino.Name == name);
       if (item != null)
       {
         Console.WriteLine($"The Current Enclosure number for {item.Name} is {item.EnclosureNumber}.");
@@ -88,18 +100,19 @@ namespace Dino_Tracker
       Console.WriteLine("What Enclosure do you want to send him to?");
       var number = Console.ReadLine();
       item.EnclosureNumber = int.Parse(number);
+      Db.SaveChanges();
     }
 
     static void DisplayAll()
     {
-      DisplayListOfDinos(Dinos);
+      DisplayListOfDinos(Db.Dinosaurs);
     }
 
     static void DietCounter()
     {
       int carnivores = 0;
       int herbivores = 0;
-      foreach (var Dino in Dinos)
+      foreach (var Dino in Db.Dinosaurs)
       {
         if (Dino.DietType == true)
         {
@@ -130,12 +143,76 @@ namespace Dino_Tracker
 
     }
 
-    static void DisplayTopThree()
+    static void Heavies()
     {
-      Console.WriteLine("Your 3 heavies dinosaurs are:");
-      DisplayListOfDinos(Dinos.OrderByDescending(dino => dino.Weight).Take(3));
+      DisplayTopThree(Db.Dinosaurs.OrderByDescending(dino => dino.Weight).Take(3));
     }
 
+    static void DisplayTopThree(IEnumerable<Dinosaur> Dinos)
+    {
+      Console.WriteLine("Your 3 heavies dinosaurs are:");
+      foreach (var Dino in Dinos)
+      {
+        Console.WriteLine($"{Dino.Name} weighing in at {Dino.Weight}");
+        Console.WriteLine("---------------------------------------------------------");
+      }
+      Console.WriteLine("Thicc!");
+    }
+
+    static void ReleaseDino()
+    {
+      Console.WriteLine("Which Dinosaur would you like to release?");
+      var released = Console.ReadLine();
+      var freeDino = Db.Dinosaurs.FirstOrDefault(Dino => Dino.Name == released);
+      freeDino.EnclosureNumber = default;
+      Console.WriteLine($"Bye, {freeDino.Name}");
+      Db.SaveChanges();
+
+
+    }
+
+    static void HatchDino()
+    {
+      string[] names = { "Bridgette", "Wonda", "Roderick", "Ginny", "Saundra", "Sook", "Dick", "Mari", "Sparkle", "Chara", "Ericka", "Waldo", "Nieves", "Gertrudis", "Verla", "Donte", "Gregorio", "Olivia", "Breann", "Sung", "Salley", "Markita", "Vonnie", "Jason", "Ona", "Mimi", "Delmar", "Mariana", "Pearle", "Amira", "Dorine", "Mitzie", "Leslee", "Prudence", "Tennie", "Fabiola", "Janna", "Doreen", "Luther", "Su", "Johana", "Willodean", "Werner", "Rosalina", "Paula", "Nicole", "Allena", "Natasha", "Nakita", "Jeff" };
+      Console.WriteLine("The egg is hatching!");
+
+      var dino = new Dinosaur();
+      Random random = new Random();
+      dino.Name = names[random.Next(0, 50)];
+      dino.DietType = random.Next(2) == 0;
+      dino.DateAcquired = DateTime.Now;
+      dino.Weight = random.Next(0, 1000);
+      dino.EnclosureNumber = 1;
+      var dinoDiet = "";
+      if (dino.DietType == true)
+      {
+        dinoDiet = "Carnivore";
+      }
+      else if (dino.DietType == false)
+      {
+        dinoDiet = "Herbivore";
+      }
+
+      Console.WriteLine($"Your new dinosaur is named {dino.Name}, weighs {dino.Weight}lbs, and is a {dinoDiet}!");
+
+      Db.Dinosaurs.Add(dino);
+      Db.SaveChanges();
+
+    }
+
+    static void NeedsASheep()
+    {
+      DisplayHungry(Db.Dinosaurs.Where(dino => dino.DietType == true).OrderBy(dino => dino.Weight).Take(1));
+
+    }
+    static void DisplayHungry(IEnumerable<Dinosaur> Dinos)
+    {
+
+      foreach (var Dino in Dinos)
+      {
+        Console.WriteLine($"{Dino.Name} is starving at {Dino.Weight} lbs. Give sheep now!");
+      }
+    }
     static void QuitMessage()
     {
       Console.WriteLine("Goodbye");
@@ -152,7 +229,7 @@ namespace Dino_Tracker
       var input = "";
       while (input != "quit")
       {
-        Console.WriteLine("Available commands: add, remove, view, transfer, diets, heavies, quit");
+        Console.WriteLine("Available commands: add, remove, view, transfer, hatch, release, diets, hungry, heavies, quit");
         input = Console.ReadLine().ToLower();
         if (input == "add")
         {
@@ -176,11 +253,23 @@ namespace Dino_Tracker
         }
         else if (input == "heavies")
         {
-          DisplayTopThree();
+          Heavies();
         }
         else if (input == "quit")
         {
           QuitMessage();
+        }
+        else if (input == "release")
+        {
+          ReleaseDino();
+        }
+        else if (input == "hatch")
+        {
+          HatchDino();
+        }
+        else if (input == "hungry")
+        {
+          NeedsASheep();
         }
         else
         {
